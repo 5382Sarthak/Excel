@@ -23,9 +23,7 @@ public class AuthController {
     @Autowired
     private EmailService emailService;
 
-
-
-    // ✅ REGISTER
+    // REGISTER
     @PostMapping("/register")
     public String register(@RequestParam String username,
                            @RequestParam String password) {
@@ -39,10 +37,11 @@ public class AuthController {
         user.setPassword(encoder.encode(password));
 
         userRepo.save(user);
+
         return "REGISTERED";
     }
 
-    // ✅ LOGIN → STEP 1 (Generate OTP + Email)
+    // LOGIN → STEP 1 (Generate OTP + Email)
     @PostMapping("/login")
     public String login(@RequestParam String username,
                         @RequestParam String password,
@@ -50,21 +49,25 @@ public class AuthController {
 
         User user = userRepo.findByUsername(username);
 
-        // 🔍 DEBUG START
+        // Debug information — never print the actual password
         System.out.println("Entered username: " + username);
-        System.out.println("Entered password: " + password);
 
         if (user != null) {
-            System.out.println("Stored hash: " + user.getPassword());
-            System.out.println("Match result: " + encoder.matches(password, user.getPassword()));
+            System.out.println("User found in MongoDB");
+            System.out.println("Stored password hash: " + user.getPassword());
+            System.out.println(
+                "Password match: " +
+                encoder.matches(password, user.getPassword())
+            );
         } else {
-            System.out.println("User NOT FOUND in DB");
+            System.out.println("User NOT FOUND in MongoDB");
         }
-        // 🔍 DEBUG END
 
         if (user != null && encoder.matches(password, user.getPassword())) {
 
-            String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
+            String otp = String.valueOf(
+                (int) (Math.random() * 900000) + 100000
+            );
 
             session.setAttribute("otp", otp);
             session.setAttribute("tempUser", username);
@@ -77,23 +80,34 @@ public class AuthController {
 
         return "FAIL";
     }
-    @CrossOrigin(origins = "http://localhost:8080", allowCredentials = "true")
-    // ✅ VERIFY OTP
+
+    // VERIFY OTP
+    @CrossOrigin(
+        origins = "http://localhost:8080",
+        allowCredentials = "true"
+    )
     @PostMapping("/verify-otp")
-    public String verifyOtp(@RequestParam String otp, HttpSession session) {
+    public String verifyOtp(@RequestParam String otp,
+                            HttpSession session) {
 
         String sessionOtp = (String) session.getAttribute("otp");
         String tempUser = (String) session.getAttribute("tempUser");
         Long otpTime = (Long) session.getAttribute("otpTime");
 
-        if (sessionOtp == null || tempUser == null || otpTime == null) {
+        if (sessionOtp == null ||
+            tempUser == null ||
+            otpTime == null) {
+
             return "NO_OTP";
         }
 
         long currentTime = System.currentTimeMillis();
 
+        // OTP expires after 5 minutes
         if (currentTime - otpTime > 300000) {
+
             session.removeAttribute("otp");
+
             return "OTP_EXPIRED";
         }
 
@@ -111,14 +125,19 @@ public class AuthController {
         return "INVALID_OTP";
     }
 
+    // CHECK SESSION
     @GetMapping("/check-session")
     public boolean checkSession(HttpSession session) {
+
         return session.getAttribute("user") != null;
     }
 
+    // LOGOUT
     @GetMapping("/logout")
     public String logout(HttpSession session) {
+
         session.invalidate();
+
         return "LOGGED OUT";
     }
 }
