@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 18px;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            font-size: 28px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        select {
+            font-size: 16px;
+            padding: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>API Dashboard</h2>
+
+    <button onclick="logout()">Logout</button>
+
+    <br><br>
+
+    <label>Sort By:</label>
+    <select id="sortOption" onchange="loadData()">
+        <option value="mostUsed">Most Used</option>
+        <option value="leastUsed">Least Used</option>
+        <option value="mostFailed">Most Failed</option>
+        <option value="leastFailed">Least Failed</option>
+        <option value="successRateHigh">success Rate High</option>
+        <option value="successRateLow">success Rate Low</option>
+        <option value="failureRateHigh">failure Rate High</option>
+        <option value="failureRateLow">failure Rate Low</option>
+        
+    </select>
+
+    <br><br>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>API Key</th>
+                <th>Total</th>
+                <th>Success</th>
+                <th>Failed</th>
+                <th>Success %</th>
+				<th>Failure %</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        // 🔒 session check
+        fetch("/check-session")
+            .then(res => res.json())
+            .then(isLoggedIn => {
+                if (!isLoggedIn) {
+                    window.location.href = "login.html";
+                }
+            });
+
+        function loadData() {
+            let sort = document.getElementById("sortOption").value;
+
+            fetch("/view?sortBy=" + sort)
+                .then(res => {
+                    if (res.status === 401) {
+                        window.location.href = "login.html";
+                        return;
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (!data) return;
+
+                    let tbody = document.getElementById("tableBody");
+                    tbody.innerHTML = "";
+
+                    data.forEach(item => {
+                        let row = `
+                            <tr>
+                                <td>${item.apiKey}</td>
+                                <td>${item.totalCalls}</td>
+                                <td>${item.successCalls}</td>
+                                <td>${item.failedCalls}</td>
+                                <td>${item.successPercent.toFixed(2)}%</td>
+                                <td>${item.failedPercent.toFixed(2)}%</td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                });
+        }
+
+        function logout() {
+            fetch("/logout")
+                .then(() => window.location.href = "login.html");
+        }
+
+        window.onload = loadData;
+    </script>
+
+</body>
+</html>
