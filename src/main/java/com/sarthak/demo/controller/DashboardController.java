@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @CrossOrigin(
-    origins = "http://localhost:8080",
+    origins = "http://localhost:5173",
     allowCredentials = "true"
 )
 public class DashboardController {
