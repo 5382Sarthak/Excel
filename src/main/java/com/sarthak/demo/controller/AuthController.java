@@ -29,9 +29,7 @@ public class AuthController {
     private EmailService emailService;
 
 
-    // =========================================================
     // REGISTER
-    // =========================================================
 
     @PostMapping("/register")
     public ResponseEntity<String> register(
@@ -61,12 +59,8 @@ public class AuthController {
     }
 
 
-    // =========================================================
     // LOGIN
-    // STEP 1 → CHECK USERNAME/PASSWORD
-    // STEP 2 → GENERATE OTP
-    // STEP 3 → SEND OTP EMAIL
-    // =========================================================
+    // CHECK USERNAME/PASSWORD
 
     @PostMapping("/login")
     public ResponseEntity<String> login(
@@ -81,9 +75,7 @@ public class AuthController {
         User user = userRepo.findByUsername(username);
 
 
-        // -----------------------------------------------------
         // USER NOT FOUND
-        // -----------------------------------------------------
 
         if (user == null) {
 
@@ -97,9 +89,7 @@ public class AuthController {
         }
 
 
-        // -----------------------------------------------------
-        // CHECK PASSWORD
-        // -----------------------------------------------------
+                // CHECK PASSWORD
 
         boolean passwordMatches =
                 encoder.matches(
@@ -124,18 +114,14 @@ public class AuthController {
         }
 
 
-        // -----------------------------------------------------
-        // GENERATE 6-DIGIT OTP
-        // -----------------------------------------------------
+        // GENERATE OTP
 
         String otp = String.valueOf(
                 (int) (Math.random() * 900000) + 100000
         );
 
 
-        // -----------------------------------------------------
         // STORE OTP IN SESSION
-        // -----------------------------------------------------
 
         session.setAttribute(
                 "otp",
@@ -153,10 +139,9 @@ public class AuthController {
         );
 
 
-        // -----------------------------------------------------
-        // SEND OTP TO EMAIL
-        // -----------------------------------------------------
 
+        // SEND OTP TO EMAIL
+        
         try {
 
             emailService.sendOtp(
@@ -226,10 +211,8 @@ public class AuthController {
         }
 
 
-        // -----------------------------------------------------
         // CHECK OTP EXPIRATION
         // 5 MINUTES
-        // -----------------------------------------------------
 
         long currentTime =
                 System.currentTimeMillis();
@@ -258,10 +241,8 @@ public class AuthController {
         }
 
 
-        // -----------------------------------------------------
-        // OTP CORRECT
-        // USER IS NOW LOGGED IN
-        // -----------------------------------------------------
+                // OTP CORRECT
+        // USER LOGGED IN
 
         session.setAttribute(
                 "user",
@@ -289,9 +270,7 @@ public class AuthController {
     }
 
 
-    // =========================================================
     // CHECK SESSION
-    // =========================================================
 
     @GetMapping("/check-session")
     public ResponseEntity<Boolean> checkSession(
@@ -304,10 +283,8 @@ public class AuthController {
     }
 
 
-    // =========================================================
-    // LOGOUT
-    // =========================================================
-
+        // LOGOUT
+    
     @GetMapping("/logout")
     public ResponseEntity<String> logout(
             HttpSession session) {

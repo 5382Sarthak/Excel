@@ -1,8 +1,7 @@
+
 package com.sarthak.demo.controller;
 
-import com.sarthak.demo.model.ApiUsage;
 import com.sarthak.demo.service.ExcelService;
-
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin(
@@ -22,59 +21,52 @@ public class DashboardController {
     @Autowired
     private ExcelService excelService;
 
-    // UPLOAD EXCEL FILE
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(
             @RequestParam("file") MultipartFile file,
             HttpSession session) {
 
-        // Check login
         if (session.getAttribute("user") == null) {
-            return ResponseEntity
-                    .status(401)
-                    .body("Unauthorized");
+            return ResponseEntity.status(401).body("Unauthorized");
         }
 
         if (file.isEmpty()) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("Please select an Excel file.");
+            return ResponseEntity.badRequest()
+                    .body("Please select a sales Excel file.");
+        }
+
+        String filename = file.getOriginalFilename();
+        if (filename == null ||
+                !(filename.toLowerCase().endsWith(".xlsx") ||
+                  filename.toLowerCase().endsWith(".xls"))) {
+            return ResponseEntity.badRequest()
+                    .body("Please upload an .xlsx or .xls file.");
         }
 
         try {
-
-            excelService.parseExcel(file.getInputStream());
+            int imported = excelService.parseExcel(file.getInputStream());
 
             return ResponseEntity.ok(
-                    "File uploaded successfully!"
+                    "Sales data imported successfully. Added " +
+                    imported + " records. Previous data was retained."
             );
 
         } catch (Exception e) {
-
             e.printStackTrace();
-
-            return ResponseEntity
-                    .status(500)
-                    .body("Upload failed!");
+            return ResponseEntity.badRequest().body(
+                    "Import failed: " + e.getMessage()
+            );
         }
     }
 
-    // VIEW DATA
     @GetMapping("/view")
-    public ResponseEntity<?> viewData(
-            @RequestParam(defaultValue = "mostUsed") String sortBy,
-            HttpSession session) {
+    public ResponseEntity<?> viewData(HttpSession session) {
 
-        // Check login
         if (session.getAttribute("user") == null) {
-            return ResponseEntity
-                    .status(401)
-                    .body("Unauthorized");
+            return ResponseEntity.status(401).body("Unauthorized");
         }
 
-        List<ApiUsage> result =
-                excelService.getSortedData(sortBy);
-
-        return ResponseEntity.ok(result);
+        Map<String, Object> analytics = excelService.getAnalytics();
+        return ResponseEntity.ok(analytics);
     }
 }
